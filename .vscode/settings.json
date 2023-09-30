@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "undefined/subscriptions/875ebe00-664b-42af-98c0-3d82681f2166/resourceGroups/MeetingApp/providers/Microsoft.Web/sites/meeting-app-be",
+    "appService.deploySubpath": "."
+}
