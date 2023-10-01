@@ -18,6 +18,14 @@ export class AppGateway
   onModuleInit(): void {
     this.server.on('connection', (socket) => {
       console.log(socket.id);
+      socket.data.color = `#${((Math.random() * 0xffffff) << 0)
+        .toString(16)
+        .padStart(6, '0')}`;
+      this.server.emit('onMessage', {
+        user: 'AUTO',
+        message: `User ${socket.handshake.query.name} has join the chat`,
+        color: `#FFFFFF`
+      })
     });
   }
 
@@ -34,6 +42,7 @@ export class AppGateway
     this.server.emit('onMessage', {
       user: client.data.user,
       message: payload,
+      color: client.data.color,
     });
   }
 }
