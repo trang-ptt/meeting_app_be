@@ -7,7 +7,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-
+import { redisClient } from 'src/app.consts';
+import { v4 as uuidv4 } from 'uuid';
 @WebSocketGateway()
 export class SocketGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit
@@ -43,11 +44,42 @@ export class SocketGateway
     });
   }
 
-  joinRoom(socket: Socket) {
-    socket.on('join-room', (roomId, user) => {
-      socket.join(roomId);
-      socket.to(roomId).emit('user-connected', user);
-      console.log(user);
-    });
+  async joinRoom(socket: Socket) {
+    socket.on(
+      'join-room',
+      async (
+        roomId: string,
+        user: {
+          username;
+          joinId?;
+        },
+      ) => {
+        try {
+          const username = user.username;
+          socket.join(roomId);
+          const joinId = uuidv4();
+          socket.to(roomId).emit('user-connected', {
+            username,
+            joinId,
+          });
+          const redis = redisClient;
+          await redis.connect();
+
+          const joinedUser = await redis.json.get(`${roomId}:${joinId}`);
+          if (!joinedUser) {
+            await redis.json.set(`${roomId}:${joinId}`, '$', {
+              joinId,
+              username,
+              ava: '#FFFFFF',
+            });
+          }
+
+          await redis.disconnect();
+        } catch (error) {
+          // throw error;
+          console.error(error);
+        }
+      },
+    );
   }
 }

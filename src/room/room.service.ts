@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { redisClient } from 'src/app.consts';
 import { SocketGateway } from 'src/socket';
 import { RoomRepository } from './room.repository';
 
@@ -25,7 +26,11 @@ export class RoomService {
   createRoom() {
     const roomCode = this.randomString(6).toLowerCase();
     // const existed = this.roomRepo.findExistingRoom(roomCode)
-    this.gateway.server.emit('join-room', roomCode, 'host');
+    this.gateway.server.emit('join-room', roomCode, { username: 'host' });
     return roomCode;
+  }
+
+  async getRoomParticipant(code: string) {
+    return await redisClient.ft.search(code, '*', {});
   }
 }
