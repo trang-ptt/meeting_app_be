@@ -9,7 +9,7 @@ import {
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway()
-export class AppGateway
+export class SocketGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit
 {
   @WebSocketServer()
@@ -21,28 +21,33 @@ export class AppGateway
       socket.data.color = `#${((Math.random() * 0xffffff) << 0)
         .toString(16)
         .padStart(6, '0')}`;
-      this.server.emit('onMessage', {
-        user: 'AUTO',
-        message: `User ${socket.handshake.query.name} has join the chat`,
-        color: `#FFFFFF`
-      })
+
+      this.joinRoom(socket);
     });
   }
 
-  handleDisconnect(client: Socket) {
-    client.disconnect();
+  handleDisconnect(socket: Socket) {
+    socket.disconnect();
   }
 
-  handleConnection(client: Socket) {
-    client.data.user = client.handshake.query.name;
+  handleConnection(socket: Socket) {
+    socket.data.user = socket.handshake.query.name;
   }
 
   @SubscribeMessage('message')
-  handleMessage(client: Socket, payload: string): void {
+  handleMessage(socket: Socket, payload: string): void {
     this.server.emit('onMessage', {
-      user: client.data.user,
+      user: socket.data.user,
       message: payload,
-      color: client.data.color,
+      color: socket.data.color,
+    });
+  }
+
+  joinRoom(socket: Socket) {
+    socket.on('join-room', (roomId, user) => {
+      socket.join(roomId);
+      socket.to(roomId).emit('user-connected', user);
+      console.log(user);
     });
   }
 }
