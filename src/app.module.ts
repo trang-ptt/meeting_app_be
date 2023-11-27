@@ -1,14 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppGateway } from './app.gateway';
 import { AuthModule } from './auth/auth.module';
+import { RoomModule } from './room/room.module';
+import { SocketModule } from './socket/socket.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    SocketModule,
+    RoomModule,
     AuthModule,
   ],
-  providers: [AppGateway],
 })
 export class AppModule {}
