@@ -9,6 +9,10 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  DATABASE_URL: mongodb+srv://Khanh:Khanh20521455@app-meeting.jw6rqeq.mongodb.net/app-meeting?retryWrites=true&w=majority
+  JWT_SECRET: qF=Czau.u%M(ZcdrLFGbVCJN}VH+u_}mHhTijuPNjg2V;c}N}F:Q{zY:Km$g/DBhp#_%meowmeow$tB=Fzv{ATYih2rB}A?:3eGB
+
 jobs:
   build:
     runs-on: windows-latest
