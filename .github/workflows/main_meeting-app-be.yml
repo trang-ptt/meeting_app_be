@@ -9,6 +9,10 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  DATABASE_URL: mongodb+srv://Khanh:Khanh20521455@app-meeting.jw6rqeq.mongodb.net/app-meeting?retryWrites=true&w=majority
+  JWT_SECRET: qF=Czau.u%M(ZcdrLFGbVCJN}VH+u_}mHhTijuPNjg2V;c}N}F:Q{zY:Km$g/DBhp#_%meowmeow$tB=Fzv{ATYih2rB}A?:3eGB
+
 jobs:
   build:
     runs-on: windows-latest
@@ -24,7 +28,9 @@ jobs:
       - name: yarn install, build
         run: |
           npm install -g yarn
-          yarn install
+          yarn install --frozen-lockfile
+          npx prisma generate
+          npx prisma db push
           yarn build
       
       - name: Upload artifact for deployment job
