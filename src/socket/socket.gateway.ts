@@ -9,12 +9,16 @@ import {
 import { Server, Socket } from 'socket.io';
 import { redisClient } from 'src/app.consts';
 import { v4 as uuidv4 } from 'uuid';
+import { JoinUserDTO } from './dto';
+import { SocketRepository } from './socket.repository';
 @WebSocketGateway()
 export class SocketGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit
 {
   @WebSocketServer()
   server: Server;
+
+  constructor(private socketRepo: SocketRepository) {}
 
   onModuleInit(): void {
     this.server.on('connection', (socket) => {
@@ -46,19 +50,22 @@ export class SocketGateway
 
   async joinRoom(socket: Socket) {
     socket.on(
-      'join-room',
+      'joinRoom',
       async (
-        roomId: string,
-        user: {
-          username;
-          joinId?;
-        },
+        dto: JoinUserDTO
       ) => {
         try {
-          const username = user.username;
+          const { uid, code } = dto;
+
+          const room = await this.socketRepo.findExistingRoom(code)
+          const roomId = room.id
+
+          const user = await this.socketRepo.findUser(uid)
+          const username = user.name || user.email.split('@')[0]
+
           socket.join(roomId);
           const joinId = uuidv4();
-          socket.to(roomId).emit('user-connected', {
+          socket.to(roomId).emit('userConnected', {
             username,
             joinId,
           });

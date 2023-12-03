@@ -1,10 +1,15 @@
-import { Controller, Get, Post, Query, Res } from '@nestjs/common';
-import { RtcRole, RtcTokenBuilder } from 'agora-access-token';
+import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { user } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
-import { APP_CERTIFICATE, APP_ID } from 'src/app.consts';
-import { GetRoomTokenQueryDTO } from './dtos';
+import { GetUser } from 'src/auth/decorator';
+import { JwtGuard } from 'src/auth/guard';
+import { GetRoomTokenQueryDTO, RoomTokenResponseDTO } from './dto';
 import { RoomService } from './room.service';
 
+@ApiTags('Room')
+@UseGuards(JwtGuard)
+@ApiBearerAuth()
 @Controller('room')
 export class RoomController {
   constructor(private roomService: RoomService) {}
@@ -19,42 +24,21 @@ export class RoomController {
     next();
   };
 
-  @Post()
-  create() {
-    return this.roomService.createRoom();
-  }
-
+  @ApiResponse({
+    type: RoomTokenResponseDTO,
+  })
   @Get('/token')
-  getToken(@Res() resp: Response, @Query() dto: GetRoomTokenQueryDTO) {
+  async getToken(
+    @Res() resp: Response,
+    @Query() dto: GetRoomTokenQueryDTO,
+    @GetUser() user: user,
+  ) {
     try {
-      const { code, uid } = dto;
-      let role: number;
-      if (dto.role === 'publisher') {
-        role = RtcRole.PUBLISHER;
-      } else {
-        role = RtcRole.SUBSCRIBER;
-      }
-
-      // get the expire time
-      const expireTime = dto.expireTime || '3600';
-      const privilegeExpireTime =
-        Math.floor(Date.now() / 1000) + parseInt(expireTime, 10);
-
-      // build the token
-      const token = RtcTokenBuilder.buildTokenWithUid(
-        APP_ID,
-        APP_CERTIFICATE,
-        code,
-        parseInt(uid),
-        role,
-        privilegeExpireTime,
-      );
-
-      // return the token
-      return resp.json({ rtcToken: token });
+      const result = await this.roomService.getRoomToken(dto, user);
+      return resp.json(result);
     } catch (error) {
       console.error(error);
-      throw error
+      throw error;
     }
   }
 }
