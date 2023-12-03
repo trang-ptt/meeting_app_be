@@ -7,13 +7,18 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-
+import { redisClient } from 'src/app.consts';
+import { v4 as uuidv4 } from 'uuid';
+import { JoinUserDTO } from './dto';
+import { SocketRepository } from './socket.repository';
 @WebSocketGateway()
 export class SocketGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit
 {
   @WebSocketServer()
   server: Server;
+
+  constructor(private socketRepo: SocketRepository) {}
 
   onModuleInit(): void {
     this.server.on('connection', (socket) => {
@@ -43,11 +48,45 @@ export class SocketGateway
     });
   }
 
-  joinRoom(socket: Socket) {
-    socket.on('join-room', (roomId, user) => {
-      socket.join(roomId);
-      socket.to(roomId).emit('user-connected', user);
-      console.log(user);
-    });
+  async joinRoom(socket: Socket) {
+    socket.on(
+      'joinRoom',
+      async (
+        dto: JoinUserDTO
+      ) => {
+        try {
+          const { uid, code } = dto;
+
+          const room = await this.socketRepo.findExistingRoom(code)
+          const roomId = room.id
+
+          const user = await this.socketRepo.findUser(uid)
+          const username = user.name || user.email.split('@')[0]
+
+          socket.join(roomId);
+          const joinId = uuidv4();
+          socket.to(roomId).emit('userConnected', {
+            username,
+            joinId,
+          });
+          const redis = redisClient;
+          await redis.connect();
+
+          const joinedUser = await redis.json.get(`${roomId}:${joinId}`);
+          if (!joinedUser) {
+            await redis.json.set(`${roomId}:${joinId}`, '$', {
+              joinId,
+              username,
+              ava: '#FFFFFF',
+            });
+          }
+
+          await redis.disconnect();
+        } catch (error) {
+          // throw error;
+          console.error(error);
+        }
+      },
+    );
   }
 }
