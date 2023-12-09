@@ -82,6 +82,9 @@ export class RoomService {
   }
 
   async getRoomParticipant(code: string) {
-    return await redisClient.ft.search(code, '*', {});
+    await redisClient.connect();
+    const result = await redisClient.ft.search(code, '*', {});
+    await redisClient.disconnect()
+    return result
   }
 }

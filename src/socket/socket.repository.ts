@@ -15,12 +15,4 @@ export class SocketRepository {
       },
     });
   }
-
-  async findUser(uid: number) {
-    return await this.prisma.user.findUnique({
-      where: {
-        userId: uid,
-      },
-    });
-  }
 }
