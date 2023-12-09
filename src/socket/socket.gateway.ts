@@ -34,6 +34,7 @@ export class SocketGateway
         .padStart(6, '0')}`;
 
       this.joinRoom(socket);
+      this.leaveRoom(socket);
     });
   }
 
@@ -91,8 +92,8 @@ export class SocketGateway
 
         const room = await this.socketRepo.findExistingRoom(code);
         if (!room) {
-          console.error("Room not exist")
-          return HttpCode(400)
+          console.error('Room not exist');
+          return HttpCode(400);
         }
 
         const username = user.name || user.email.split('@')[0];
@@ -102,17 +103,24 @@ export class SocketGateway
 
         const redis = redisClient;
         await redis.connect();
+        const list: number[] =
+          ((await redis.json.get(code, {})) as number[]) || [];
+
+        const found = list?.find((e) => e === uid) || null;
+        if (!found) {
+          list.push(uid);
+          await redis.json.set(code, '$', list);
+        }
+
+        await redis.json.set(`${code}:${uid}`, '$', {
+          uid,
+          username,
+          avatar: user.avatar,
+          micStatus: dto.micStatus || false,
+          camStatus: dto.camStatus || false,
+        });
 
         const joinedUser = await redis.json.get(`${code}:${uid}`);
-        if (!joinedUser) {
-          await redis.json.set(`${code}:${uid}`, '$', {
-            uid,
-            username,
-            avatar: user.avatar,
-            micStatus: dto.micStatus || false,
-            camStatus: dto.camStatus || false,
-          });
-        }
         await redis.disconnect();
         socket.to(code).emit('userConnected', joinedUser);
       } catch (error) {
@@ -122,6 +130,32 @@ export class SocketGateway
     });
   }
 
-  @SubscribeMessage('leaveRoom')
-  handleLeave(socket: Socket, code: string) {}
+  async leaveRoom(socket: Socket) {
+    socket.on('leaveRoom', async (code: string) => {
+      if (!socket.data.user) await this.handleConnection(socket);
+      const user: user = socket.data.user;
+      const username = user.name || user.email.split('@')[0];
+      const redis = redisClient;
+      await redis.connect();
+      const list: number[] =
+        ((await redis.json.get(code, {})) as number[]) || [];
+
+      //remove from list
+      const index = list.indexOf(user.userId);
+      if (index > -1) {
+        list.splice(index, 1);
+      }
+
+      await redis.json.set(code, '$', list);
+
+      await redis.json.del(`${code}:${user.userId}`);
+
+      await redis.disconnect();
+
+      socket.to(code).emit('userDisconnected', {
+        uid: user.userId,
+        username,
+      });
+    });
+  }
 }

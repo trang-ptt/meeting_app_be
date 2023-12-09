@@ -82,9 +82,17 @@ export class RoomService {
   }
 
   async getRoomParticipant(code: string) {
-    await redisClient.connect();
-    const result = await redisClient.ft.search(code, '*', {});
-    await redisClient.disconnect()
-    return result
+    const room = await this.roomRepo.findExistingRoom(code);
+    if (!room) throw new ForbiddenException('Room not exist');
+    const redis = redisClient;
+    await redis.connect();
+    const uidList = ((await redis.json.get(code)) as number[]) || [];
+    const result = [];
+    for (const uid of uidList) {
+      const joinedUser = await redis.json.get(`${code}:${uid}`);
+      result.push(joinedUser);
+    }
+    await redis.disconnect();
+    return result;
   }
 }
