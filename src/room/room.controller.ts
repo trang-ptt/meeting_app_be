@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { user } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
@@ -36,6 +36,16 @@ export class RoomController {
     try {
       const result = await this.roomService.getRoomToken(dto, user);
       return resp.json(result);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  @Get('participants/:code')
+  async getParticipants(@Param('code') code: string) {
+    try {
+      return await this.roomService.getRoomParticipant(code)
     } catch (error) {
       console.error(error);
       throw error;
