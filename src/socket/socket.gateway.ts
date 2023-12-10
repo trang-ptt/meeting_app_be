@@ -1,4 +1,4 @@
-import { HttpCode, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import {
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -11,7 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { redisClient } from 'src/app.consts';
 import { AuthService } from 'src/auth/auth.service';
 import { PrismaService } from 'src/prisma';
-import { JoinUserDTO } from './dto';
+import { JoinUserDTO, RoomMessageDTO } from './dto';
 import { SocketRepository } from './socket.repository';
 @WebSocketGateway()
 export class SocketGateway
@@ -26,6 +26,16 @@ export class SocketGateway
     private authService: AuthService,
   ) {}
 
+  async clearRoom() {
+    const redis = redisClient;
+    await redis.connect();
+    const rooms = await this.socketRepo.findAllExistingRoom();
+    if (rooms.length === 0) {
+      await redis.flushAll();
+    }
+    await redis.disconnect();
+  }
+
   onModuleInit(): void {
     this.server.on('connection', (socket) => {
       console.log(socket.id);
@@ -36,6 +46,8 @@ export class SocketGateway
       this.joinRoom(socket);
       this.leaveRoom(socket);
     });
+
+    this.clearRoom();
   }
 
   handleDisconnect(socket: Socket) {
@@ -75,11 +87,26 @@ export class SocketGateway
   }
 
   @SubscribeMessage('message')
-  handleMessage(socket: Socket, payload: string): void {
-    this.server.emit('onMessage', {
-      user: socket.data.user,
-      message: payload,
-      color: socket.data.color,
+  async handleMessage(socket: Socket, dto: RoomMessageDTO): Promise<void> {
+    if (!socket.data.user) await this.handleConnection(socket);
+    const user: user = socket.data.user;
+    const { code, message } = dto;
+
+    const room = await this.socketRepo.findExistingRoom(code);
+    if (!room) {
+      console.error('Room not exist');
+      socket.to(code).emit('error', 'Room not exist');
+      return;
+    }
+
+    const username = user.name || user.email.split('@')[0];
+    const uid = user.userId;
+
+    this.server.to(code).emit('onMessage', {
+      uid,
+      username,
+      message,
+      createdAt: new Date(),
     });
   }
 
@@ -93,7 +120,8 @@ export class SocketGateway
         const room = await this.socketRepo.findExistingRoom(code);
         if (!room) {
           console.error('Room not exist');
-          return HttpCode(400);
+          socket.to(code).emit('error', 'Room not exist');
+          return;
         }
 
         const username = user.name || user.email.split('@')[0];
@@ -156,6 +184,7 @@ export class SocketGateway
         uid: user.userId,
         username,
       });
+      socket.leave(code)
     });
   }
 }

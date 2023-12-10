@@ -15,4 +15,14 @@ export class SocketRepository {
       },
     });
   }
+
+  async findAllExistingRoom() {
+    return await this.prisma.room.findMany({
+      where: {
+        endTime: {
+          gte: new Date(),
+        },
+      },
+    });
+  }
 }
