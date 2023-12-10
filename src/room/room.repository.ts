@@ -1,6 +1,6 @@
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma';
 import { RoomDTO } from './dto';
-import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class RoomRepository {
@@ -30,6 +30,17 @@ export class RoomRepository {
       data: {
         ...dto,
       },
+    });
+  }
+
+  async endRoomMeeting(id: string) {
+    return await this.prisma.room.update({
+      where: {
+        id,
+      },
+      data: {
+        endTime: new Date()
+      }
     });
   }
 }

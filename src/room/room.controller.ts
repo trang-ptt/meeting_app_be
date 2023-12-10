@@ -1,5 +1,18 @@
-import { Controller, Get, Param, Query, Res, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Query,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { user } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import { GetUser } from 'src/auth/decorator';
@@ -56,6 +69,19 @@ export class RoomController {
   async getChat(@Param('code') code: string) {
     try {
       return await this.roomService.getRoomChat(code);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  @ApiOkResponse({
+    description: 'End meeting',
+  })
+  @Delete(':code')
+  async endMeet(@Param('code') code: string, @GetUser() user: user) {
+    try {
+      return await this.roomService.endMeet(user, code);
     } catch (error) {
       console.error(error);
       throw error;
