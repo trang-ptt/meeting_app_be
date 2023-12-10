@@ -45,7 +45,17 @@ export class RoomController {
   @Get('participants/:code')
   async getParticipants(@Param('code') code: string) {
     try {
-      return await this.roomService.getRoomParticipant(code)
+      return await this.roomService.getRoomParticipant(code);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  @Get('chat/:code')
+  async getChat(@Param('code') code: string) {
+    try {
+      return await this.roomService.getRoomChat(code);
     } catch (error) {
       console.error(error);
       throw error;

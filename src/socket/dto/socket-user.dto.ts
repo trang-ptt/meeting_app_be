@@ -3,3 +3,8 @@ export class JoinUserDTO {
   micStatus: boolean
   camStatus: boolean
 }
+
+export class RoomMessageDTO {
+  code: string
+  message: string
+}
