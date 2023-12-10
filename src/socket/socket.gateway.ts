@@ -95,7 +95,7 @@ export class SocketGateway
     const room = await this.socketRepo.findExistingRoom(code);
     if (!room) {
       console.error('Room not exist');
-      socket.to(code).emit('error', 'Room not exist');
+      socket.emit('error', 'Room not exist');
       return;
     }
 
@@ -129,7 +129,7 @@ export class SocketGateway
         const room = await this.socketRepo.findExistingRoom(code);
         if (!room) {
           console.error('Room not exist');
-          socket.to(code).emit('error', 'Room not exist');
+          socket.emit('error', 'Room not exist');
           return;
         }
 

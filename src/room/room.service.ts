@@ -103,6 +103,34 @@ export class RoomService {
     await redis.connect();
     const messages = ((await redis.json.get(`${code}:chat`)) as any[]) || [];
     await redis.disconnect();
-    return messages
+    return messages;
+  }
+
+  async endMeet(user: user, code: string) {
+    const room = await this.roomRepo.findExistingRoom(code);
+    if (!room) throw new ForbiddenException('Room not exist');
+
+    if (room.hostId !== user.userId)
+      throw new ForbiddenException(
+        'This user not have permission to end this meeting',
+      );
+
+    const redis = redisClient;
+    await redis.connect();
+    const uidList = ((await redis.json.get(code)) as number[]) || [];
+    for (const uid of uidList) {
+      await Promise.all([redis.json.del(`${code}:${uid}`)]);
+    }
+    await Promise.all([
+      redis.json.del(`${code}:chat`),
+      redis.json.del(code),
+      await this.roomRepo.endRoomMeeting(room.id),
+    ]);
+    await redis.disconnect();
+
+    this.gateway.server.to(code).emit('endMeet', code);
+    return {
+      code: 'SUCCESS',
+    };
   }
 }
