@@ -95,4 +95,14 @@ export class RoomService {
     await redis.disconnect();
     return result;
   }
+
+  async getRoomChat(code: string) {
+    const room = await this.roomRepo.findExistingRoom(code);
+    if (!room) throw new ForbiddenException('Room not exist');
+    const redis = redisClient;
+    await redis.connect();
+    const messages = ((await redis.json.get(`${code}:chat`)) as any[]) || [];
+    await redis.disconnect();
+    return messages
+  }
 }

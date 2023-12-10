@@ -82,7 +82,7 @@ export class SocketGateway
   }
 
   private disconnect(socket: Socket) {
-    socket.emit('Error', new UnauthorizedException());
+    socket.emit('error', new UnauthorizedException());
     socket.disconnect();
   }
 
@@ -101,13 +101,22 @@ export class SocketGateway
 
     const username = user.name || user.email.split('@')[0];
     const uid = user.userId;
-
-    this.server.to(code).emit('onMessage', {
+    const saveMessage = {
       uid,
       username,
+      avatar: user.avatar,
       message,
       createdAt: new Date(),
-    });
+    };
+
+    const redis = redisClient
+    await redis.connect()
+    const messages = await redis.json.get(`${code}:chat`) as any[] || []
+    messages.push(saveMessage)
+    await redis.json.set(`${code}:chat`, '$', messages)
+    await redis.disconnect()
+
+    this.server.to(code).emit('onMessage', saveMessage);
   }
 
   async joinRoom(socket: Socket) {
