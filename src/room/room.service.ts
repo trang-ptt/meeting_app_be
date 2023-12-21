@@ -1,16 +1,21 @@
+import { MailerService } from '@nestjs-modules/mailer';
 import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { room, user } from '@prisma/client';
 import { RtcRole, RtcTokenBuilder } from 'agora-access-token';
 import { APP_CERTIFICATE, APP_ID, redisClient } from 'src/app.consts';
+import { PrismaService } from 'src/prisma';
 import { SocketGateway } from 'src/socket';
 import { GetRoomTokenQueryDTO } from './dto';
 import { RoomRepository } from './room.repository';
-
 @Injectable()
 export class RoomService {
   constructor(
     private gateway: SocketGateway,
     private roomRepo: RoomRepository,
+    private mailerService: MailerService,
+    private config: ConfigService,
+    private prisma: PrismaService
   ) {}
 
   randomString(length: number) {
@@ -133,4 +138,26 @@ export class RoomService {
       code: 'SUCCESS',
     };
   }
+  async sendEmailForAllParticipants(code: string, users: user[]) {
+    const room = this.roomRepo.findExistingRoom(code);
+    const host = this.prisma.user.findFirst({
+      where:{
+        userId: (await room).hostId
+      }
+    })
+    if((await room).startTime < new Date())
+      return 'Meeting time has started. Cant send email!';
+    for (const user of users) {
+      await this.mailerService.sendMail({
+        to:user.email,
+        from: this.config.get('MAIL_FROM'),
+        subject: `Meet invite from ${(await host).name}`,
+        text: `${(await host).name} has invited you to join meeting ${(await room).title}
+        \n Time: ${((await room).startTime)}
+        \n Code: ${(await room).code} \n `,
+      });
+    }
+    return room;
+  }
+
 }
