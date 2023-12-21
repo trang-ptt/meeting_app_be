@@ -1,11 +1,13 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
   Param,
+  Post,
   Query,
   Res,
-  UseGuards,
+  UseGuards
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -17,7 +19,7 @@ import { user } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import { GetUser } from 'src/auth/decorator';
 import { JwtGuard } from 'src/auth/guard';
-import { GetRoomTokenQueryDTO, RoomTokenResponseDTO } from './dto';
+import { GetRoomTokenQueryDTO, ParticipantDTO, RoomTokenResponseDTO } from './dto';
 import { RoomService } from './room.service';
 
 @ApiTags('Room')
@@ -86,5 +88,10 @@ export class RoomController {
       console.error(error);
       throw error;
     }
+  }
+  @Post('sendEmail/:code')
+  async sendEmail(@Param('code') code: string, @Body() dto: ParticipantDTO ){
+    const { users } = dto;
+    return await this.roomService.sendEmailForAllParticipants(code,users);
   }
 }
