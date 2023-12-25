@@ -1,5 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsNumber } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNumber } from 'class-validator';
 
 export class GetRoomTokenQueryDTO {
   @ApiProperty({
@@ -26,11 +26,12 @@ export class GetRoomTokenQueryDTO {
 }
 
 export class RoomDTO {
-    code: string
-    startTime: Date
-    endTime: Date
-    hostId: number
-    title: string
+  code: string;
+  startTime: Date;
+  endTime: Date;
+  hostId: number;
+  title: string;
+  restrict: boolean;
 }
 
 export class RoomTokenResponseDTO {
@@ -38,5 +39,19 @@ export class RoomTokenResponseDTO {
   rtcToken: string;
 
   @ApiProperty()
-  code: string
+  code: string;
+}
+
+export class CreateRoomDTO {
+  @ApiProperty()
+  startTime: number;
+
+  @ApiProperty()
+  endTime: number;
+
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty()
+  restrict: boolean;
 }

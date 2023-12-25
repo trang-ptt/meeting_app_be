@@ -3,10 +3,15 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { room, user } from '@prisma/client';
 import { RtcRole, RtcTokenBuilder } from 'agora-access-token';
-import { APP_CERTIFICATE, APP_ID, redisClient } from 'src/app.consts';
+import {
+  APP_CERTIFICATE,
+  APP_ID,
+  RoomStatus,
+  redisClient,
+} from 'src/app.consts';
 import { PrismaService } from 'src/prisma';
 import { SocketGateway } from 'src/socket';
-import { GetRoomTokenQueryDTO } from './dto';
+import { CreateRoomDTO, GetRoomTokenQueryDTO } from './dto';
 import { RoomRepository } from './room.repository';
 @Injectable()
 export class RoomService {
@@ -15,7 +20,7 @@ export class RoomService {
     private roomRepo: RoomRepository,
     private mailerService: MailerService,
     private config: ConfigService,
-    private prisma: PrismaService
+    private prisma: PrismaService,
   ) {}
 
   randomString(length: number) {
@@ -61,6 +66,7 @@ export class RoomService {
           startTime: new Date(startTime),
           endTime: new Date(privilegeExpireTime * 1000),
           hostId: uid,
+          restrict: false,
         });
       }
     }
@@ -141,23 +147,116 @@ export class RoomService {
   async sendEmailForAllParticipants(code: string, users: user[]) {
     const room = this.roomRepo.findExistingRoom(code);
     const host = this.prisma.user.findFirst({
-      where:{
-        userId: (await room).hostId
-      }
-    })
-    if((await room).startTime < new Date())
+      where: {
+        userId: (await room).hostId,
+      },
+    });
+    if ((await room).startTime < new Date())
       return 'Meeting time has started. Cant send email!';
     for (const user of users) {
       await this.mailerService.sendMail({
-        to:user.email,
+        to: user.email,
         from: this.config.get('MAIL_FROM'),
         subject: `Meet invite from ${(await host).name}`,
-        text: `${(await host).name} has invited you to join meeting ${(await room).title}
-        \n Time: ${((await room).startTime)}
+        text: `${(await host).name} has invited you to join meeting ${
+          (await room).title
+        }
+        \n Time: ${(await room).startTime}
         \n Code: ${(await room).code} \n `,
       });
     }
     return room;
   }
 
+  async create(user: user, dto: CreateRoomDTO) {
+    const { startTime, title, endTime, restrict } = dto;
+    const uid = user.userId;
+    let code, room;
+    while (!code) {
+      code = this.randomString(6);
+      room = await this.roomRepo.findExistingRoom(code);
+      if (room) code = undefined;
+      else {
+        room = await this.roomRepo.createRoom({
+          code,
+          title,
+          startTime: new Date(startTime || Date.now()),
+          endTime: new Date(endTime || Date.now() + 3600000),
+          hostId: uid,
+          restrict,
+        });
+      }
+    }
+
+    return room;
+  }
+
+  async getRoomList(user: user) {
+    const rooms = [];
+    //get ongoing
+    const ongoingRooms = await this.getOngoingRoom(user);
+    if (ongoingRooms.length > 0) {
+      ongoingRooms.forEach((room) => {
+        rooms.push(room);
+      });
+    }
+    //get scheduled
+    const scheduledRooms = await this.getScheduledRooms(user);
+    if (scheduledRooms.length > 0) {
+      scheduledRooms.forEach((room) => {
+        rooms.push(room);
+      });
+    }
+
+    return rooms;
+  }
+
+  async getOngoingRoom(user: user) {
+    const rooms = [];
+    const lastJoinedRoom: any = await this.prisma.room.findFirst({
+      where: {
+        id: user.lastJoinedRoomId,
+        endTime: {
+          gt: new Date(),
+        },
+      },
+    });
+    if (lastJoinedRoom) {
+      lastJoinedRoom.status = RoomStatus.ONGOING;
+      rooms.push(lastJoinedRoom);
+    }
+
+    const hostRoom: any = await this.prisma.room.findFirst({
+      where: {
+        hostId: user.userId,
+        endTime: {
+          gt: new Date(),
+        },
+        startTime: {
+          lte: new Date(),
+        },
+      },
+    });
+    if (hostRoom) {
+      hostRoom.status = RoomStatus.ONGOING;
+      rooms.push(hostRoom);
+    }
+    return rooms;
+  }
+
+  async getScheduledRooms(user: user) {
+    const rooms: any[] = await this.prisma.room.findMany({
+      where: {
+        hostId: user.userId,
+        startTime: {
+          gte: new Date(),
+        },
+      },
+    });
+
+    for (const room of rooms) {
+      room.status = RoomStatus.SCHEDULED;
+    }
+    return rooms;
+  }
 }
