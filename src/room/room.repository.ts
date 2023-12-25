@@ -39,8 +39,8 @@ export class RoomRepository {
         id,
       },
       data: {
-        endTime: new Date()
-      }
+        endTime: new Date(),
+      },
     });
   }
 }

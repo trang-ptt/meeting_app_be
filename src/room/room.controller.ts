@@ -7,7 +7,7 @@ import {
   Post,
   Query,
   Res,
-  UseGuards
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -19,7 +19,12 @@ import { user } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import { GetUser } from 'src/auth/decorator';
 import { JwtGuard } from 'src/auth/guard';
-import { GetRoomTokenQueryDTO, ParticipantDTO, RoomTokenResponseDTO } from './dto';
+import {
+  CreateRoomDTO,
+  GetRoomTokenQueryDTO,
+  ParticipantDTO,
+  RoomTokenResponseDTO,
+} from './dto';
 import { RoomService } from './room.service';
 
 @ApiTags('Room')
@@ -89,9 +94,20 @@ export class RoomController {
       throw error;
     }
   }
+
   @Post('sendEmail/:code')
-  async sendEmail(@Param('code') code: string, @Body() dto: ParticipantDTO ){
+  async sendEmail(@Param('code') code: string, @Body() dto: ParticipantDTO) {
     const { users } = dto;
-    return await this.roomService.sendEmailForAllParticipants(code,users);
+    return await this.roomService.sendEmailForAllParticipants(code, users);
+  }
+
+  @Post('create')
+  async create(@GetUser() user: user, @Body() dto: CreateRoomDTO) {
+    return await this.roomService.create(user, dto);
+  }
+
+  @Get('list')
+  async getRoomList(@GetUser() user: user) {
+    return await this.roomService.getRoomList(user);
   }
 }
