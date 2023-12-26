@@ -11,7 +11,8 @@ import {
 } from 'src/app.consts';
 import { PrismaService } from 'src/prisma';
 import { SocketGateway } from 'src/socket';
-import { CreateRoomDTO, GetRoomTokenQueryDTO } from './dto';
+import { JoinUserDTO } from 'src/socket/dto';
+import { CreateRoomDTO, GetRoomTokenQueryDTO, JoinRequestDTO } from './dto';
 import { RoomRepository } from './room.repository';
 @Injectable()
 export class RoomService {
@@ -66,7 +67,7 @@ export class RoomService {
           startTime: new Date(startTime),
           endTime: new Date(privilegeExpireTime * 1000),
           hostId: uid,
-          restrict: false,
+          listUserIds: [],
         });
       }
     }
@@ -100,8 +101,24 @@ export class RoomService {
     const uidList = ((await redis.json.get(code)) as number[]) || [];
     const result = [];
     for (const uid of uidList) {
-      const joinedUser = await redis.json.get(`${code}:${uid}`);
-      result.push(joinedUser);
+      const joinedUser: any = await redis.json.get(`${code}:${uid}`);
+      if (!joinedUser.request) result.push(joinedUser);
+    }
+    await redis.disconnect();
+    return result;
+  }
+
+  async getRequestUsers(code: string) {
+    const room = await this.roomRepo.findExistingRoom(code);
+    if (!room) throw new ForbiddenException('Room not exist');
+
+    const redis = redisClient;
+    await redis.connect();
+    const uidList = ((await redis.json.get(code)) as number[]) || [];
+    const result = [];
+    for (const uid of uidList) {
+      const joinedUser: any = await redis.json.get(`${code}:${uid}`);
+      if (joinedUser.request) result.push(joinedUser);
     }
     await redis.disconnect();
     return result;
@@ -169,7 +186,7 @@ export class RoomService {
   }
 
   async create(user: user, dto: CreateRoomDTO) {
-    const { startTime, title, endTime, restrict } = dto;
+    const { startTime, title, endTime, listUserIds } = dto;
     const uid = user.userId;
     let code, room;
     while (!code) {
@@ -183,7 +200,7 @@ export class RoomService {
           startTime: new Date(startTime || Date.now()),
           endTime: new Date(endTime || Date.now() + 3600000),
           hostId: uid,
-          restrict,
+          listUserIds,
         });
       }
     }
@@ -258,5 +275,71 @@ export class RoomService {
       room.status = RoomStatus.SCHEDULED;
     }
     return rooms;
+  }
+
+  async requestToJoin(user: user, dto: JoinUserDTO) {
+    const { code, micStatus, camStatus } = dto;
+    const uid = user.userId;
+    const username = user.name || user.email.split('@')[0];
+    const room = await this.roomRepo.findExistingRoom(code);
+    if (!room) throw new ForbiddenException('Room not exist');
+
+    if (room.hostId === user.userId) {
+      this.gateway.server.emit('joinRoom', {
+        code,
+        micStatus,
+        camStatus,
+      });
+
+      return {
+        code: 'SUCCESS',
+        message: 'User has joined',
+      };
+    }
+
+    const redis = redisClient;
+    await redis.connect();
+    const list: number[] = ((await redis.json.get(code, {})) as number[]) || [];
+
+    const found = list?.find((e) => e === uid) || null;
+    if (!found) {
+      list.push(uid);
+      await Promise.all([
+        redis.json.set(code, '$', list),
+        redis.json.set(`${code}:${uid}`, '$', {
+          uid,
+          username,
+          avatar: user.avatar,
+          micStatus: dto.micStatus || false,
+          camStatus: dto.camStatus || false,
+          request: true,
+        }),
+      ]);
+    }
+    await redis.disconnect();
+    this.gateway.server.to(code).emit('onRequest', {
+      uid,
+      username,
+      avatar: user.avatar,
+    });
+
+    return {
+      code: 'SUCCESS',
+      message: 'Waiting to join',
+    };
+  }
+
+  async replyJoinRequest(user: user, dto: JoinRequestDTO) {
+    const { code, uid, accept } = dto;
+
+    const room = await this.roomRepo.findExistingRoom(code);
+    if (!room) throw new ForbiddenException('Room not exist');
+
+    const redis = redisClient;
+    await redis.connect();
+
+    const joinedUser = await redis.json.get(`${code}:${uid}`);
+
+    await redis.disconnect();
   }
 }

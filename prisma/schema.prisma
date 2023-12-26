@@ -25,7 +25,7 @@ model room {
   startTime DateTime
   endTime DateTime
   code String
-  restrict Boolean @default(false)
+  listParticipant String[]
 }
 model participant{
   id     String @id @default(auto()) @map("_id") @db.ObjectId
