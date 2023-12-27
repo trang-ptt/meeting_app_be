@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiOkResponse,
+  ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -19,9 +19,11 @@ import { user } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import { GetUser } from 'src/auth/decorator';
 import { JwtGuard } from 'src/auth/guard';
+import { JoinUserDTO } from 'src/socket/dto';
 import {
   CreateRoomDTO,
   GetRoomTokenQueryDTO,
+  JoinRequestDTO,
   ParticipantDTO,
   RoomTokenResponseDTO,
 } from './dto';
@@ -72,6 +74,16 @@ export class RoomController {
     }
   }
 
+  @Get('requestUsers/:code')
+  async getRequestUsers(@Param('code') code: string) {
+    try {
+      return await this.roomService.getRequestUsers(code);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
   @Get('chat/:code')
   async getChat(@Param('code') code: string) {
     try {
@@ -82,7 +94,7 @@ export class RoomController {
     }
   }
 
-  @ApiOkResponse({
+  @ApiOperation({
     description: 'End meeting',
   })
   @Delete(':code')
@@ -97,8 +109,8 @@ export class RoomController {
 
   @Post('sendEmail/:code')
   async sendEmail(@Param('code') code: string, @Body() dto: ParticipantDTO) {
-    const { users } = dto;
-    return await this.roomService.sendEmailForAllParticipants(code, users);
+    const { emailList } = dto;
+    return await this.roomService.sendEmailForAllParticipants(code, emailList);
   }
 
   @Post('create')
@@ -108,6 +120,16 @@ export class RoomController {
 
   @Get('list')
   async getRoomList(@GetUser() user: user) {
-    return await this.roomService.getRoomList(user);
+    return await this.roomService.getScheduledRooms(user);
+  }
+
+  @Post('join')
+  async requestToJoin(@GetUser() user: user, @Body() dto: JoinUserDTO) {
+    return await this.roomService.requestToJoin(user, dto);
+  }
+
+  @Post('replyJoinRequest')
+  async replyJoinRequest(@GetUser() user: user, @Body() dto: JoinRequestDTO) {
+    return await this.roomService.replyJoinRequest(user, dto);
   }
 }

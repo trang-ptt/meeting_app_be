@@ -28,7 +28,12 @@ export class RoomRepository {
   async createRoom(dto: RoomDTO) {
     return await this.prisma.room.create({
       data: {
-        ...dto,
+        code: dto.code,
+        title: dto.title,
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+        hostId: dto.hostId,
+        listParticipant: dto.listUserIds,
       },
     });
   }

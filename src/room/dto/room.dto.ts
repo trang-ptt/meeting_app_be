@@ -31,7 +31,7 @@ export class RoomDTO {
   endTime: Date;
   hostId: number;
   title: string;
-  restrict: boolean;
+  listUserIds: string[]
 }
 
 export class RoomTokenResponseDTO {
@@ -53,5 +53,5 @@ export class CreateRoomDTO {
   title: string;
 
   @ApiProperty()
-  restrict: boolean;
+  listUserIds: string[]
 }

@@ -170,6 +170,7 @@ export class SocketGateway
         const joinedUser = await redis.json.get(`${code}:${uid}`);
         await redis.disconnect();
         socket.to(code).emit('userConnected', joinedUser);
+        console.log(`User ${username} joined room ${code}`)
       } catch (error) {
         console.error(error);
         throw error;
