@@ -4,9 +4,6 @@ export class ProfileDto {
   @ApiProperty()
   name: string;
 
-  @ApiProperty()
-  avatar: string;
-
 }
 export class changePasswordDto {
     @ApiProperty()
