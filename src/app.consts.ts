@@ -11,3 +11,8 @@ export const redisClient = createClient({
 });
 export const APP_ID = '8c0e34537b24401ebe53e202cea1b299';
 export const APP_CERTIFICATE = '44b8896902a64308ab27fd360252b1e9';
+
+export const RoomStatus = {
+  ONGOING: 'ongoing',
+  SCHEDULED: 'scheduled'
+}

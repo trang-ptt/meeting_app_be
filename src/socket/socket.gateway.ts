@@ -109,12 +109,12 @@ export class SocketGateway
       createdAt: new Date(),
     };
 
-    const redis = redisClient
-    await redis.connect()
-    const messages = await redis.json.get(`${code}:chat`) as any[] || []
-    messages.push(saveMessage)
-    await redis.json.set(`${code}:chat`, '$', messages)
-    await redis.disconnect()
+    const redis = redisClient;
+    await redis.connect();
+    const messages = ((await redis.json.get(`${code}:chat`)) as any[]) || [];
+    messages.push(saveMessage);
+    await redis.json.set(`${code}:chat`, '$', messages);
+    await redis.disconnect();
 
     this.server.to(code).emit('onMessage', saveMessage);
   }
@@ -149,13 +149,23 @@ export class SocketGateway
           await redis.json.set(code, '$', list);
         }
 
-        await redis.json.set(`${code}:${uid}`, '$', {
-          uid,
-          username,
-          avatar: user.avatar,
-          micStatus: dto.micStatus || false,
-          camStatus: dto.camStatus || false,
-        });
+        await Promise.all([
+          redis.json.set(`${code}:${uid}`, '$', {
+            uid,
+            username,
+            avatar: user.avatar,
+            micStatus: dto.micStatus || false,
+            camStatus: dto.camStatus || false,
+          }),
+          this.prismaService.user.update({
+            where: {
+              id: user.id,
+            },
+            data: {
+              lastJoinedRoomId: room.id,
+            },
+          }),
+        ]);
 
         const joinedUser = await redis.json.get(`${code}:${uid}`);
         await redis.disconnect();
@@ -193,7 +203,7 @@ export class SocketGateway
         uid: user.userId,
         username,
       });
-      socket.leave(code)
+      socket.leave(code);
     });
   }
 }

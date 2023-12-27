@@ -16,6 +16,7 @@ model user{
   email String @unique
   password String
   avatar String?
+  lastJoinedRoomId String?
 }
 model room {
   id    String @id @default(auto()) @map("_id") @db.ObjectId
@@ -24,6 +25,7 @@ model room {
   startTime DateTime
   endTime DateTime
   code String
+  restrict Boolean @default(false)
 }
 model participant{
   id     String @id @default(auto()) @map("_id") @db.ObjectId
