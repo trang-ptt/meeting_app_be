@@ -109,8 +109,8 @@ export class RoomController {
 
   @Post('sendEmail/:code')
   async sendEmail(@Param('code') code: string, @Body() dto: ParticipantDTO) {
-    const { users } = dto;
-    return await this.roomService.sendEmailForAllParticipants(code, users);
+    const { emailList } = dto;
+    return await this.roomService.sendEmailForAllParticipants(code, emailList);
   }
 
   @Post('create')
@@ -120,7 +120,7 @@ export class RoomController {
 
   @Get('list')
   async getRoomList(@GetUser() user: user) {
-    return await this.roomService.getRoomList(user);
+    return await this.roomService.getScheduledRooms(user);
   }
 
   @Post('join')

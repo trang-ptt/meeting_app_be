@@ -13,6 +13,7 @@ import { PrismaService } from 'src/prisma';
 import { SocketGateway } from 'src/socket';
 import { JoinUserDTO } from 'src/socket/dto';
 import { CreateRoomDTO, GetRoomTokenQueryDTO, JoinRequestDTO } from './dto';
+import { RequestStatus } from './room.consts';
 import { RoomRepository } from './room.repository';
 @Injectable()
 export class RoomService {
@@ -161,7 +162,7 @@ export class RoomService {
       code: 'SUCCESS',
     };
   }
-  async sendEmailForAllParticipants(code: string, users: user[]) {
+  async sendEmailForAllParticipants(code: string, emailList: string[]) {
     const room = this.roomRepo.findExistingRoom(code);
     const host = this.prisma.user.findFirst({
       where: {
@@ -170,9 +171,9 @@ export class RoomService {
     });
     if ((await room).startTime < new Date())
       return 'Meeting time has started. Cant send email!';
-    for (const user of users) {
+    for (const email of emailList) {
       await this.mailerService.sendMail({
-        to: user.email,
+        to: email,
         from: this.config.get('MAIL_FROM'),
         subject: `Meet invite from ${(await host).name}`,
         text: `${(await host).name} has invited you to join meeting ${
@@ -204,6 +205,25 @@ export class RoomService {
         });
       }
     }
+
+    const emails = [];
+    for (const id of listUserIds) {
+      const joinUser = await this.prisma.user.findUnique({
+        where: {
+          id,
+        },
+      });
+      if (!joinUser) {
+        console.error(`User id ${id} not exists`);
+      } else {
+        emails.push(joinUser.email);
+      }
+    }
+
+    if (emails.length > 0)
+      await this.sendEmailForAllParticipants(code, emails).catch((error) => {
+        console.error(error);
+      });
 
     return room;
   }
@@ -284,16 +304,13 @@ export class RoomService {
     const room = await this.roomRepo.findExistingRoom(code);
     if (!room) throw new ForbiddenException('Room not exist');
 
-    if (room.hostId === user.userId) {
-      this.gateway.server.emit('joinRoom', {
-        code,
-        micStatus,
-        camStatus,
-      });
+    const invited = room.listParticipant?.find((e) => e === user.id) || null;
 
+    if (room.hostId === user.userId || invited) {
       return {
         code: 'SUCCESS',
-        message: 'User has joined',
+        status: RequestStatus.APPROVE,
+        message: 'User can join',
       };
     }
 
@@ -310,8 +327,8 @@ export class RoomService {
           uid,
           username,
           avatar: user.avatar,
-          micStatus: dto.micStatus || false,
-          camStatus: dto.camStatus || false,
+          micStatus: micStatus || false,
+          camStatus: camStatus || false,
           request: true,
         }),
       ]);
@@ -319,27 +336,64 @@ export class RoomService {
     await redis.disconnect();
     this.gateway.server.to(code).emit('onRequest', {
       uid,
-      username,
-      avatar: user.avatar,
+      status: RequestStatus.WAITING,
     });
 
     return {
       code: 'SUCCESS',
+      status: RequestStatus.WAITING,
       message: 'Waiting to join',
     };
   }
 
   async replyJoinRequest(user: user, dto: JoinRequestDTO) {
     const { code, uid, accept } = dto;
+    let status;
 
     const room = await this.roomRepo.findExistingRoom(code);
     if (!room) throw new ForbiddenException('Room not exist');
+    if (user.userId !== room.hostId)
+      throw new ForbiddenException('Only host can reply');
 
     const redis = redisClient;
     await redis.connect();
 
-    const joinedUser = await redis.json.get(`${code}:${uid}`);
+    const joinedUser: any = await redis.json.get(`${code}:${uid}`);
 
+    if (accept) {
+      await redis.json.set(`${code}:${uid}`, '$', {
+        uid,
+        username: joinedUser.username,
+        avatar: user.avatar,
+        micStatus: joinedUser.micStatus || false,
+        camStatus: joinedUser.camStatus || false,
+      });
+      status = RequestStatus.APPROVE;
+    } else {
+      status = RequestStatus.DECLINE;
+
+      const list: number[] =
+        ((await redis.json.get(code, {})) as number[]) || [];
+
+      //remove from list
+      const index = list.indexOf(uid);
+      if (index > -1) {
+        list.splice(index, 1);
+      }
+
+      await redis.json.set(code, '$', list);
+
+      await redis.json.del(`${code}:${uid}`);
+    }
     await redis.disconnect();
+
+    this.gateway.server.to(code).emit('onRequest', {
+      uid,
+      status,
+    });
+
+    return {
+      code: 'SUCCESS',
+    };
   }
 }
