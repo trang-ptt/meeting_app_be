@@ -57,7 +57,7 @@ export class UserController {
     return await this.userService.changePassword(user, dto);
   }
   @Patch('updateProfile')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('files'))
   async updateProfileWithAva(
     @GetUser() user: user,
     @Body() dto: ProfileDto,
