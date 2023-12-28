@@ -12,7 +12,12 @@ import {
 import { PrismaService } from 'src/prisma';
 import { SocketGateway } from 'src/socket';
 import { JoinUserDTO } from 'src/socket/dto';
-import { CreateRoomDTO, GetRoomTokenQueryDTO, JoinRequestDTO } from './dto';
+import {
+  CreateRoomDTO,
+  GetListByMonthDTO,
+  GetRoomTokenQueryDTO,
+  JoinRequestDTO,
+} from './dto';
 import { RequestStatus } from './room.consts';
 import { RoomRepository } from './room.repository';
 @Injectable()
@@ -187,8 +192,12 @@ export class RoomService {
   }
 
   async create(user: user, dto: CreateRoomDTO) {
-    const { startTime, title, endTime, listUserIds } = dto;
+    const { title, listUserIds } = dto;
     const uid = user.userId;
+    const startTime = dto.startTime || Date.now()
+    const endTime = dto.endTime || startTime + 3600000;
+    listUserIds.push(user.id);
+
     let code, room;
     while (!code) {
       code = this.randomString(6);
@@ -198,8 +207,8 @@ export class RoomService {
         room = await this.roomRepo.createRoom({
           code,
           title,
-          startTime: new Date(startTime || Date.now()),
-          endTime: new Date(endTime || Date.now() + 3600000),
+          startTime: new Date(startTime),
+          endTime: new Date(endTime),
           hostId: uid,
           listUserIds,
         });
@@ -394,6 +403,72 @@ export class RoomService {
 
     return {
       code: 'SUCCESS',
+    };
+  }
+
+  async getListByMonth(user: user, dto: GetListByMonthDTO) {
+    const { firstDay, lastDay } = this.getFirstAndLastTimeOfMonth(
+      dto.timestamp,
+    );
+
+    const rooms: any[] = await this.prisma.room.findMany({
+      where: {
+        AND: {
+          OR: [
+            {
+              hostId: user.userId,
+            },
+            {
+              listParticipant: {
+                has: user.id,
+              },
+            },
+          ],
+          startTime: {
+            gte: firstDay,
+          },
+          endTime: {
+            lte: lastDay,
+          },
+        },
+      },
+    });
+
+    await Promise.all(
+      rooms.map(async (room) => {
+        const participants = await Promise.all(
+          room.listParticipant.map(async (id: string) => {
+            const u = await this.prisma.user.findUnique({
+              where: {
+                id,
+              },
+            });
+            delete u.password;
+            delete u.lastJoinedRoomId;
+            return u;
+          }),
+        );
+        const found = room.listParticipant?.find((e) => e === user.id) || null;
+        if (!found) participants.push(user);
+
+        room.listParticipant = participants;
+      }),
+    );
+
+    return rooms;
+  }
+
+  getFirstAndLastTimeOfMonth(timestamp: number) {
+    const date = new Date(timestamp);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+
+    const firstDay = new Date(year, month, 1).getTime();
+
+    const lastDay = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime();
+    return {
+      firstDay: new Date(firstDay),
+      lastDay: new Date(lastDay),
     };
   }
 }
