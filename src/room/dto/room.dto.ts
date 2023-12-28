@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber } from 'class-validator';
+import { IsNotEmpty, IsNumber } from 'class-validator';
 
 export class GetRoomTokenQueryDTO {
   @ApiProperty({
@@ -31,7 +31,7 @@ export class RoomDTO {
   endTime: Date;
   hostId: number;
   title: string;
-  listUserIds: string[]
+  listUserIds: string[];
 }
 
 export class RoomTokenResponseDTO {
@@ -53,5 +53,11 @@ export class CreateRoomDTO {
   title: string;
 
   @ApiProperty()
-  listUserIds: string[]
+  listUserIds: string[];
+}
+
+export class GetListByMonthDTO {
+  @ApiProperty()
+  @IsNotEmpty()
+  timestamp: number;
 }

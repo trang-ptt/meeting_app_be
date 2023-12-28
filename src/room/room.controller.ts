@@ -22,6 +22,7 @@ import { JwtGuard } from 'src/auth/guard';
 import { JoinUserDTO } from 'src/socket/dto';
 import {
   CreateRoomDTO,
+  GetListByMonthDTO,
   GetRoomTokenQueryDTO,
   JoinRequestDTO,
   ParticipantDTO,
@@ -118,7 +119,7 @@ export class RoomController {
     return await this.roomService.create(user, dto);
   }
 
-  @Get('list')
+  @Get('list/scheduled')
   async getRoomList(@GetUser() user: user) {
     return await this.roomService.getScheduledRooms(user);
   }
@@ -131,5 +132,10 @@ export class RoomController {
   @Post('replyJoinRequest')
   async replyJoinRequest(@GetUser() user: user, @Body() dto: JoinRequestDTO) {
     return await this.roomService.replyJoinRequest(user, dto);
+  }
+
+  @Post('list')
+  async getListByMonth(@GetUser() user: user, @Body() dto: GetListByMonthDTO) {
+    return await this.roomService.getListByMonth(user, dto)
   }
 }
