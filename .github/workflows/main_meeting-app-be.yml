@@ -29,6 +29,7 @@ jobs:
         run: |
           npm install -g yarn
           yarn install --frozen-lockfile
+          yarn upgrade
           npx prisma generate
           npx prisma db push
           yarn build
