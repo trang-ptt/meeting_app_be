@@ -96,6 +96,7 @@ export class RoomService {
     return {
       rtcToken: token,
       code,
+      hostId: room.hostId
     };
   }
 
@@ -194,7 +195,7 @@ export class RoomService {
   async create(user: user, dto: CreateRoomDTO) {
     const { title, listUserIds } = dto;
     const uid = user.userId;
-    const startTime = dto.startTime || Date.now()
+    const startTime = dto.startTime || Date.now();
     const endTime = dto.endTime || startTime + 3600000;
     listUserIds.push(user.id);
 
@@ -344,7 +345,7 @@ export class RoomService {
     }
     await redis.disconnect();
     this.gateway.server.to(code).emit('onRequest', {
-      uid,
+      user,
       status: RequestStatus.WAITING,
     });
 
@@ -359,7 +360,14 @@ export class RoomService {
     const { code, uid, accept } = dto;
     let status;
 
-    const room = await this.roomRepo.findExistingRoom(code);
+    const [room, reqUser] = await Promise.all([
+      this.roomRepo.findExistingRoom(code),
+      this.prisma.user.findUnique({
+        where: {
+          userId: uid,
+        },
+      }),
+    ]);
     if (!room) throw new ForbiddenException('Room not exist');
     if (user.userId !== room.hostId)
       throw new ForbiddenException('Only host can reply');
@@ -397,7 +405,7 @@ export class RoomService {
     await redis.disconnect();
 
     this.gateway.server.to(code).emit('onRequest', {
-      uid,
+      user: reqUser,
       status,
     });
 
