@@ -96,7 +96,7 @@ export class RoomService {
     return {
       rtcToken: token,
       code,
-      hostId: room.hostId
+      hostId: room.hostId,
     };
   }
 
@@ -444,6 +444,9 @@ export class RoomService {
 
     await Promise.all(
       rooms.map(async (room) => {
+        if (!room.title) {
+          room.title = 'No title';
+        }
         const participants = await Promise.all(
           room.listParticipant.map(async (id: string) => {
             const u = await this.prisma.user.findUnique({
@@ -458,7 +461,6 @@ export class RoomService {
         );
         const found = room.listParticipant?.find((e) => e === user.id) || null;
         if (!found) participants.push(user);
-
         room.listParticipant = participants;
       }),
     );
