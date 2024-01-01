@@ -331,18 +331,18 @@ export class RoomService {
     const found = list?.find((e) => e === uid) || null;
     if (!found) {
       list.push(uid);
-      await Promise.all([
-        redis.json.set(code, '$', list),
-        redis.json.set(`${code}:${uid}`, '$', {
-          uid,
-          username,
-          avatar: user.avatar,
-          micStatus: micStatus || false,
-          camStatus: camStatus || false,
-          request: true,
-        }),
-      ]);
     }
+    await Promise.all([
+      redis.json.set(code, '$', list),
+      redis.json.set(`${code}:${uid}`, '$', {
+        uid,
+        username,
+        avatar: user.avatar,
+        micStatus: micStatus || false,
+        camStatus: camStatus || false,
+        request: true,
+      }),
+    ]);
     await redis.disconnect();
     this.gateway.server.to(code).emit('onRequest', {
       user,
