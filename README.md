@@ -11,8 +11,8 @@
 <!-- Thành viên -->
 ## Thành viên
 
-| Tên thành viên | MSSV | Facebook | SDT |  
-| ------ | ------ | ------ | ------ |
+| Tên thành viên | MSSV | Facebook | 
+| ------ | ------ | ------ | 
 | Phạm Thị Thu Trang (Nhóm trưởng) | 20522041 | https://www.facebook.com/thutrang.phamthi.378 |
 | Nguyễn Trần Cẩm Tiên | 20522011 | https://www.facebook.com/tienhaileygg |
 | Phạm Thị Nhật Khánh | 20521455 | |
@@ -36,7 +36,7 @@
 Ta sử dụng IDE là Visual Studio Code để chạy ứng dụng
 
 #### 2. Download Source Code
-Chạy dòng lệnh sau trên terminal để download:
+Chạy dòng lệnh sau trên terminal để download:  
 Back-end:
    ```sh
 git clone https://github.com/trang-ptt/meeting_app_be.git
