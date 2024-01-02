@@ -1,73 +1,72 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+## Nhóm 2
+<h2 align="center">
+    Đồ án Chuyên đề Mobile & Pervasive Computing</h2>
+    <div align="center">
+<img src="https://user-images.githubusercontent.com/91247482/173222142-3949c081-0a56-4a10-bcb9-371cd579d7ff.png" width="150" />
+  </div>
+    <h3 align="center">
+    Lớp SE405.O11.PMCL</h3>
+    <h1 align="center">Tên đề tài: Ứng dụng họp trực tuyến MeetUs</h1>
+   
+<!-- Thành viên -->
+## Thành viên
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+| Tên thành viên | MSSV | Facebook | SDT |  
+| ------ | ------ | ------ | ------ |
+| Phạm Thị Thu Trang (Nhóm trưởng) | 20522041 | https://www.facebook.com/thutrang.phamthi.378 |
+| Nguyễn Trần Cẩm Tiên | 20522011 | https://www.facebook.com/tienhaileygg |
+| Phạm Thị Nhật Khánh | 20521455 | |
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+<!-- Giới thiệu -->
+## Giới thiệu
+### MeetUs là gì?
+  Koffi là một ứng dụng di động đơn giản hỗ trợ việc họp trực tuyến. Bên cạnh đó, ứng dụng có giao diện người dùng thân thiện, dễ sử dụng, tương thích nhiều thiết bị, đảm bảo tính thẩm mỹ và trải nghiệm người dùng.
+### Danh sách chức năng
+- Tạo và yêu cầu tham gia cuộc họp
+- Share màn hình
+- Nhắn tin trong cuộc họp
+- Lên lịch cuộc họp
+- Gửi mail cho cuộc họp đã lên lịch
+- Thông tin cá nhân
+- Đăng nhập, đăng ký, đổi mật khẩu
 
-## Description
+<!-- Cài đặt -->
+## Cài đặt
+#### 1. Chuẩn bị môi trường
+Ta sử dụng IDE là Visual Studio Code để chạy ứng dụng
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+#### 2. Download Source Code
+Chạy dòng lệnh sau trên terminal để download:
+Back-end:
+   ```sh
+git clone https://github.com/trang-ptt/meeting_app_be.git
+   ```
+Front-end:
+   ```sh
+git clone https://github.com/ntctien/meet_us.git
+   ```
+#### 3. Chạy chương trình
+Back-end: 
+   ```sh
+yarn install
+   ```
+   ```sh
+yarn start
+   ```
 
-## Installation
+Front-end: 
+   ```sh
+flutter pub get
+   ```
+   ```sh
+flutter run
+   ```
 
-```bash
-$ yarn install
-```
+## Công nghệ, công cụ sử dụng
+  - Agora
+  - Socket.io
 
-## Running the app
+<!-- Giấy phép -->
+## Giấy phép
+Distributed under the MIT License. 
 
-```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
-```
-
-## Test
-
-```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
