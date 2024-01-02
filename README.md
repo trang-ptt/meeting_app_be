@@ -20,7 +20,7 @@
 <!-- Giới thiệu -->
 ## Giới thiệu
 ### MeetUs là gì?
-  Koffi là một ứng dụng di động đơn giản hỗ trợ việc họp trực tuyến. Bên cạnh đó, ứng dụng có giao diện người dùng thân thiện, dễ sử dụng, tương thích nhiều thiết bị, đảm bảo tính thẩm mỹ và trải nghiệm người dùng.
+  MeetUs là một ứng dụng di động đơn giản hỗ trợ việc họp trực tuyến. Bên cạnh đó, ứng dụng có giao diện người dùng thân thiện, dễ sử dụng, tương thích nhiều thiết bị, đảm bảo tính thẩm mỹ và trải nghiệm người dùng.
 ### Danh sách chức năng
 - Tạo và yêu cầu tham gia cuộc họp
 - Share màn hình
